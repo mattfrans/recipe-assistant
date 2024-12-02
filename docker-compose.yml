@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  recipe-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount data directory for persistent storage
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app/src
+    # Override the default command if needed
+    # command: python src/example.py
