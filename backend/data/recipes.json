@@ -1,0 +1,25 @@
+{
+    "recipes": [
+        {
+            "name": "Classic Spaghetti Carbonara",
+            "ingredients": ["spaghetti", "eggs", "pecorino romano", "guanciale", "black pepper"],
+            "instructions": "1. Cook pasta al dente. 2. Crisp guanciale. 3. Mix eggs and cheese. 4. Combine with hot pasta.",
+            "cuisine": "Italian",
+            "prep_time": "20 minutes"
+        },
+        {
+            "name": "Simple Chicken Stir-Fry",
+            "ingredients": ["chicken breast", "soy sauce", "vegetables", "garlic", "ginger", "vegetable oil"],
+            "instructions": "1. Cut chicken into pieces. 2. Stir-fry vegetables. 3. Add chicken and sauce. 4. Cook until done.",
+            "cuisine": "Asian",
+            "prep_time": "25 minutes"
+        },
+        {
+            "name": "Classic Chocolate Chip Cookies",
+            "ingredients": ["flour", "butter", "brown sugar", "white sugar", "eggs", "vanilla extract", "chocolate chips"],
+            "instructions": "1. Cream butter and sugars. 2. Add eggs and vanilla. 3. Mix in dry ingredients. 4. Bake.",
+            "cuisine": "American",
+            "prep_time": "30 minutes"
+        }
+    ]
+}

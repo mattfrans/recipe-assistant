@@ -1,0 +1,14 @@
+faiss-cpu
+langchain
+langchain-community
+transformers
+torch
+numpy
+sentence-transformers
+python-dotenv
+pydantic
+accelerate
+einops
+tqdm
+flask
+flask-cors
