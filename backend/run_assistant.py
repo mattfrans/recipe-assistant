@@ -28,10 +28,8 @@ def search_recipes():
     query = data.get('query', '')
     
     try:
-        result = assistant.process_query(query)
-        if isinstance(result, list):
-            return jsonify({"recipes": result})
-        return jsonify({"recipes": [result] if result else []})
+        result = assistant.search_recipes(query)
+        return jsonify({"recipes": result if isinstance(result, list) else [result] if result else []})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -44,8 +42,22 @@ def get_substitution():
     ingredient = data.get('ingredient', '')
     
     try:
-        result = assistant.process_query(f"What can I substitute for {ingredient}?")
+        result = assistant.get_substitution(ingredient)
         return jsonify({"substitution": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/ask', methods=['POST'])
+def ask_question():
+    if not assistant:
+        return jsonify({"error": "Assistant not initialized"}), 500
+    
+    data = request.json
+    question = data.get('question', '')
+    
+    try:
+        result = assistant.answer_question(question)
+        return jsonify({"answer": result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -1,7 +1,7 @@
 import faiss
 import numpy as np
 from typing import List, Dict
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 from langchain_community.llms import HuggingFacePipeline
 from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent
 from langchain.prompts import StringPromptTemplate
@@ -33,12 +33,22 @@ class ModelManager:
     def initialize(self):
         try:
             print(f"Loading {self.model_name} model...")
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.model_name,
+                trust_remote_code=True
+            )
+            
+            # Simple model loading configuration
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+                trust_remote_code=True,
+                torch_dtype=torch.float32,  # Use float32 for CPU
                 device_map="auto"
             )
+            
+            # Move model to CPU
+            self.model = self.model.to("cpu")
+            
             print(f"{self.model_name} model loaded successfully!")
             return True
         except Exception as e:
@@ -54,7 +64,7 @@ class ModelManager:
             
         try:
             inputs = self.tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            inputs = {k: v.to("cpu") for k, v in inputs.items()}
             
             with torch.no_grad():
                 outputs = self.model.generate(
@@ -293,58 +303,39 @@ class RecipeVectorStore:
 
 class RecipeAssistant:
     def __init__(self, recipes):
-        print("\nInitializing Recipe Assistant...")
+        self.recipes = recipes
         self.model_manager = ModelManager()
         self.model_manager.initialize()
-        
         self.vector_store = RecipeVectorStore(recipes, self.model_manager)
         self.substitution = IngredientSubstitution(self.model_manager)
-        
-        # Create tools
-        self.tools = [
-            Tool(
-                name="Recipe Search",
-                func=lambda q: str(self.vector_store.search(q)),
-                description="Search for recipes based on ingredients or description"
-            ),
-            Tool(
-                name="Ingredient Substitution",
-                func=lambda i: self.substitution.suggest_substitution(i),
-                description="Suggest substitutions for ingredients"
-            )
-        ]
-        print("\nRecipe Assistant is ready!")
 
-    def process_query(self, query: str) -> str:
-        """Process a user query and return appropriate response."""
+    def search_recipes(self, query: str) -> List[Dict]:
+        """Search for recipes based on the query."""
+        if not self.model_manager.is_available():
+            return self.vector_store.fallback_search.search(query)
+        return self.vector_store.search(query)
+
+    def get_substitution(self, ingredient: str) -> str:
+        """Get substitution for an ingredient."""
+        return self.substitution.suggest_substitution(ingredient)
+
+    def answer_question(self, question: str) -> str:
+        """Answer general cooking questions."""
+        if not self.model_manager.is_available():
+            return "I'm sorry, but I'm currently operating in fallback mode and can only help with recipe searches and basic substitutions. Please try again later for more complex questions."
+        
+        prompt = f"""You are a helpful cooking assistant. Answer the following cooking-related question:
+        Question: {question}
+        
+        Please provide a clear and concise answer focused on cooking techniques, food science, or kitchen tips.
+        Answer: """
+        
         try:
-            # Check if it's a substitution query
-            if any(word in query.lower() for word in ['substitute', 'substitution', 'instead of', 'replacement']):
-                try:
-                    # Extract the ingredient from the query
-                    ingredient = query.lower()
-                    for term in ['substitute for', 'substitution for', 'instead of', 'replacement for']:
-                        if term in ingredient:
-                            ingredient = ingredient.split(term)[-1].strip()
-                            break
-                    return self.substitution.suggest_substitution(ingredient)
-                except ValueError:
-                    return "Please specify an ingredient for substitution."
-            else:
-                # It's a recipe search
-                results = self.vector_store.fallback_search.search(query)
-                if not results:
-                    return "No matching recipes found. Try different ingredients or a broader search."
-                
-                response = "Here are some recipes you might like:\n\n"
-                for i, recipe in enumerate(results, 1):
-                    response += f"{i}. {recipe['name']}\n"
-                    response += f"   Ingredients: {', '.join(recipe['ingredients'])}\n"
-                    response += f"   Instructions: {recipe['instructions']}\n\n"
-                return response
+            response = self.model_manager.generate_text(prompt, max_length=200)
+            return response if response else "I'm sorry, I couldn't generate a response. Please try rephrasing your question."
         except Exception as e:
-            print(f"Query processing error: {str(e)}")
-            return []
+            print(f"Error generating answer: {str(e)}")
+            return "I'm sorry, I encountered an error while trying to answer your question. Please try again."
 
 # Initialize the recipe assistant
 recipe_assistant = None

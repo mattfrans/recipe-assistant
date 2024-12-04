@@ -5,9 +5,10 @@ import { Recipe } from '../types/recipe'
 
 interface RecipeDisplayProps {
   recipe: Recipe | null
+  onSubstituteClick: (ingredient: string) => void
 }
 
-export default function RecipeDisplay({ recipe }: RecipeDisplayProps) {
+export default function RecipeDisplay({ recipe, onSubstituteClick }: RecipeDisplayProps) {
   if (!recipe) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -16,9 +17,13 @@ export default function RecipeDisplay({ recipe }: RecipeDisplayProps) {
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">No Recipe Selected</h3>
         <p className="text-gray-500">
-          Ask me to find a recipe for you! Try something like:
+          You can:
           <br />
-          "Find me a healthy dinner recipe"
+          1. Browse all recipes using the button above
+          <br />
+          2. Search for specific recipes
+          <br />
+          3. Ask me to recommend something!
         </p>
       </div>
     )
@@ -81,9 +86,7 @@ export default function RecipeDisplay({ recipe }: RecipeDisplayProps) {
                     variant="ghost"
                     size="sm"
                     className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                    onClick={() => {
-                      // TODO: Implement substitute functionality
-                    }}
+                    onClick={() => onSubstituteClick(ingredient)}
                   >
                     Find Substitute
                   </Button>

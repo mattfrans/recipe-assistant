@@ -1,163 +1,99 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '../../components/ui/button'
-import { Input } from '../../components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Loader2 } from 'lucide-react'
 import { Recipe } from '../types/recipe'
 
-interface ChatMessage {
-  role: 'user' | 'assistant'
-  content: string
-}
-
 interface ChatInterfaceProps {
-  onRecipeSelected: (recipe: Recipe) => void
+  onRecipeSelected: (recipe: Recipe | null) => void
 }
 
 export default function ChatInterface({ onRecipeSelected }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isLoading) return
 
-    setIsLoading(true)
-    setError(null)
-
-    const userMessage: ChatMessage = { role: 'user', content: input }
-    setMessages((prev) => [...prev, userMessage])
+    const userMessage = input.trim()
     setInput('')
+    setMessages(prev => [...prev, { text: userMessage, isUser: true }])
+    setIsLoading(true)
 
     try {
-      // Check if it's a substitution query
-      const isSubstitutionQuery = input.toLowerCase().includes('substitute') || 
-                                 input.toLowerCase().includes('replacement') ||
-                                 input.toLowerCase().includes('instead of')
-      
-      let response
-      if (isSubstitutionQuery) {
-        // Extract the ingredient from the query
-        const ingredient = input.replace(/.*substitute for |.*replacement for |.*instead of /i, '').trim()
-        response = await fetch('http://localhost:5000/api/substitute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ingredient })
-        })
-      } else {
-        // Assume it's a recipe search
-        response = await fetch('http://localhost:5000/api/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: input })
-        })
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to get response')
-      }
+      const response = await fetch('http://localhost:5000/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: userMessage })
+      })
 
       const data = await response.json()
-      
-      if (isSubstitutionQuery) {
-        const assistantMessage: ChatMessage = { 
-          role: 'assistant', 
-          content: `You can substitute with: ${data.substitution}` 
-        }
-        setMessages((prev) => [...prev, assistantMessage])
-      } else if (data.recipes && data.recipes.length > 0) {
-        const recipe = data.recipes[0];
-        // Ensure recipe has all required fields
-        if (recipe && recipe.name && Array.isArray(recipe.ingredients) && Array.isArray(recipe.instructions)) {
-          const assistantMessage: ChatMessage = { 
-            role: 'assistant', 
-            content: 'Here are some recipes you might like:' 
-          }
-          setMessages((prev) => [...prev, assistantMessage])
-          
-          // Pass the validated recipe to the parent component
-          onRecipeSelected(recipe)
+
+      if (response.ok && data.recipes) {
+        const recipes = data.recipes
+        if (recipes.length > 0) {
+          setMessages(prev => [...prev, { 
+            text: `I found some recipes that might interest you! Check them out in the list on the right.`, 
+            isUser: false 
+          }])
+          onRecipeSelected(recipes[0])
         } else {
-          const assistantMessage: ChatMessage = { 
-            role: 'assistant', 
-            content: 'Sorry, there was an issue with the recipe format.' 
-          }
-          setMessages((prev) => [...prev, assistantMessage])
+          setMessages(prev => [...prev, { 
+            text: "I couldn't find any recipes matching your request. Try different ingredients or a broader search.", 
+            isUser: false 
+          }])
         }
       } else {
-        const assistantMessage: ChatMessage = { 
-          role: 'assistant', 
-          content: 'Sorry, I couldn\'t find any matching recipes.' 
-        }
-        setMessages((prev) => [...prev, assistantMessage])
+        throw new Error(data.error || 'Failed to get response')
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+    } catch (error) {
+      console.error('Error:', error)
+      setMessages(prev => [...prev, {
+        text: "I'm sorry, I encountered an error. Please try again.",
+        isUser: false
+      }])
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Example queries */}
-      <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
-        <h3 className="font-medium text-gray-700 mb-2">Try asking:</h3>
-        <div className="space-y-2">
-          {[
-            "What can I cook with chicken and mushrooms?",
-            "I need a substitute for heavy cream",
-            "Show me some easy pasta recipes",
-          ].map((suggestion, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setInput(suggestion)
-                const form = document.querySelector('form')
-                form?.dispatchEvent(new Event('submit', { cancelable: true }))
-              }}
-              className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-amber-50 rounded-md transition-colors"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full bg-white rounded-lg shadow-sm p-2">
       {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto mb-2 space-y-2">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === 'user'
+              className={`max-w-[85%] rounded-lg p-2 ${
+                message.isUser
                   ? 'bg-amber-500 text-white'
-                  : 'bg-white shadow-sm'
+                  : 'bg-gray-100'
               }`}
             >
-              {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mb-2">
+              {!message.isUser && (
+                <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center mb-1">
                   👩‍🍳
                 </div>
               )}
-              <p className={message.role === 'user' ? 'text-white' : 'text-gray-700'}>
-                {message.content}
+              <p className={`${message.isUser ? 'text-white' : 'text-gray-700'} text-sm`}>
+                {message.text}
               </p>
             </div>
           </div>
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-lg p-3 bg-white shadow-sm">
+            <div className="max-w-[85%] rounded-lg p-2 bg-gray-100">
               <div className="flex items-center space-x-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-gray-500">Thinking...</span>
+                <span className="text-gray-500 text-sm">Looking for recipes...</span>
               </div>
             </div>
           </div>
@@ -170,22 +106,17 @@ export default function ChatInterface({ onRecipeSelected }: ChatInterfaceProps) 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about recipes, ingredients, or cooking tips..."
-          className="pr-24 bg-white shadow-sm border-amber-200 focus:border-amber-500 focus:ring-amber-500"
+          className="pr-20 bg-white shadow-sm border-amber-200 focus:border-amber-500 focus:ring-amber-500 text-sm"
+          disabled={isLoading}
         />
         <Button
           type="submit"
           disabled={isLoading}
-          className="absolute right-1.5 top-1.5 bg-amber-500 hover:bg-amber-600"
+          className="absolute right-1 top-1 bg-amber-500 hover:bg-amber-600 h-7 text-sm px-3"
         >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send'}
+          {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Send'}
         </Button>
       </form>
-
-      {error && (
-        <div className="mt-2 text-red-500 text-sm">
-          {error}
-        </div>
-      )}
     </div>
   )
 }
