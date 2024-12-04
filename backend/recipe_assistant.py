@@ -27,17 +27,72 @@ class ModelManager:
         self.model_name = model_name
         self.model = None
         self.tokenizer = None
-        print("Model loading disabled for testing")
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Using device: {self.device}")
 
     def initialize(self):
-        # Temporarily disable model loading for testing
-        return False
+        try:
+            print(f"Loading {self.model_name} model...")
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+                device_map="auto"
+            )
+            print(f"{self.model_name} model loaded successfully!")
+            return True
+        except Exception as e:
+            print(f"Error loading model: {str(e)}")
+            return False
 
     def is_available(self):
-        return False
+        return self.model is not None and self.tokenizer is not None
 
-    def get_embedding(self, text):
-        return None
+    def generate_text(self, prompt: str, max_length: int = 100) -> str:
+        if not self.is_available():
+            return None
+            
+        try:
+            inputs = self.tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_length=max_length,
+                    num_return_sequences=1,
+                    temperature=0.7,
+                    top_p=0.9,
+                    do_sample=True,
+                    pad_token_id=self.tokenizer.pad_token_id
+                )
+            
+            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            # Remove the prompt from the response
+            response = response[len(prompt):].strip()
+            return response
+        except Exception as e:
+            print(f"Error generating text: {str(e)}")
+            return None
+
+    def get_embedding(self, text: str) -> np.ndarray:
+        """Get text embedding using the model's hidden states."""
+        if not self.is_available():
+            return None
+            
+        try:
+            inputs = self.tokenizer(text, return_tensors="pt", max_length=512, truncation=True)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            with torch.no_grad():
+                outputs = self.model(**inputs, output_hidden_states=True)
+            
+            # Use the last hidden state's [CLS] token as the embedding
+            embedding = outputs.hidden_states[-1][0, 0].cpu().numpy()
+            return embedding
+        except Exception as e:
+            print(f"Error getting embedding: {str(e)}")
+            return None
 
 class SimpleRecipeSearch:
     """Fallback search when embeddings are not available"""
@@ -66,66 +121,45 @@ class SimpleRecipeSearch:
 
     def search(self, query: str, k: int = 3) -> List[Dict]:
         """Search for recipes using simple text matching."""
-        scored_recipes = [
-            (self._score_recipe(recipe, query), recipe)
-            for recipe in self.recipes
-        ]
+        query = query.lower()
+        scored_recipes = []
+        
+        for recipe in self.recipes:
+            # Ensure recipe has required fields
+            if not recipe.get('name') or not recipe.get('ingredients') or not recipe.get('instructions'):
+                continue
+                
+            score = 0
+            
+            # Check recipe name
+            if any(word in recipe['name'].lower() for word in query.split()):
+                score += 3
+            
+            # Check ingredients
+            for ingredient in recipe['ingredients']:
+                if any(word in ingredient.lower() for word in query.split()):
+                    score += 2
+            
+            # Check cuisine
+            if 'cuisine' in recipe and any(word in recipe['cuisine'].lower() for word in query.split()):
+                score += 1
+            
+            if score > 0:
+                # Ensure recipe format is consistent
+                formatted_recipe = {
+                    'name': recipe['name'],
+                    'cuisine': recipe.get('cuisine', ''),
+                    'prep_time': recipe.get('prep_time', ''),
+                    'cook_time': recipe.get('cook_time', ''),
+                    'servings': recipe.get('servings', 0),
+                    'ingredients': recipe['ingredients'],
+                    'instructions': recipe['instructions']
+                }
+                scored_recipes.append((score, formatted_recipe))
         
         # Sort by score and return top k
         scored_recipes.sort(key=lambda x: x[0], reverse=True)
-        return [recipe for score, recipe in scored_recipes[:k] if score > 0]
-
-class RecipeVectorStore:
-    def __init__(self, recipes: List[Dict], model_manager: ModelManager):
-        self.recipes = recipes
-        self.model_manager = model_manager
-        self.dimension = 2560  # Phi-2's hidden size
-        self.index = None
-        self.fallback_search = SimpleRecipeSearch(recipes)
-        self._initialize_index()
-
-    def _initialize_index(self):
-        if self.model_manager.is_available():
-            print("\nInitializing recipe vector store...")
-            self.index = faiss.IndexFlatL2(self.dimension)
-            self._build_index()
-
-    def _build_index(self):
-        if not self.model_manager.is_available():
-            return
-
-        print("Building recipe index...")
-        vectors = []
-        for recipe in tqdm(self.recipes, desc="Processing recipes"):
-            text = f"{recipe['name']} {' '.join(recipe['ingredients'])} {recipe['instructions']}"
-            vector = self.model_manager.get_embedding(text)
-            if vector is not None:
-                vectors.append(vector)
-        
-        if vectors:
-            vectors = np.vstack(vectors)
-            self.index.add(vectors)
-            print("Recipe index built successfully!")
-
-    def search(self, query: str, k: int = 3):
-        try:
-            # First try the fallback search
-            results = self.fallback_search.search(query, k)
-            if results:
-                return results
-            
-            # If no results, try vector search if available
-            if self.model_manager.is_available() and self.index is not None:
-                query_embedding = self.model_manager.get_embedding(query)
-                if query_embedding is not None:
-                    D, I = self.index.search(query_embedding.reshape(1, -1), k)
-                    return [self.recipes[i] for i in I[0] if i >= 0]
-            
-            return results
-        except Exception as e:
-            print(f"Search error: {str(e)}")
-            # Always fall back to simple search
-            return self.fallback_search.search(query, k)
+        return [recipe for score, recipe in scored_recipes[:k]]
 
 class IngredientSubstitution:
     def __init__(self, model_manager: ModelManager):
@@ -154,17 +188,108 @@ class IngredientSubstitution:
                 f"No substitution found for {ingredient}. Try an online search for alternatives.")
 
         try:
-            prompt = f"Suggest a healthy substitution for {ingredient} in cooking. Return only the substitute ingredient name, nothing else."
-            inputs = self.model_manager.tokenizer(prompt, return_tensors="pt", max_length=512)
-            with torch.no_grad():
-                outputs = self.model_manager.model.generate(**inputs, max_length=100, num_return_sequences=1)
-            suggestion = self.model_manager.tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-            return suggestion if suggestion else self.default_substitutions.get(ingredient.lower(), 
+            prompt = f"""You are a helpful cooking assistant. Suggest a healthy substitution for {ingredient} in cooking.
+            Consider common dietary restrictions and provide a practical alternative.
+            Response format: Just return the substitute ingredient name, nothing else.
+            For example:
+            - butter -> olive oil
+            - eggs -> flax eggs
+            - beef -> mushrooms
+            
+            {ingredient} ->"""
+            
+            suggestion = self.model_manager.generate_text(prompt, max_length=50)
+            if suggestion:
+                # Clean up the response
+                suggestion = suggestion.split('\n')[0].strip()
+                suggestion = suggestion.split('->')[0].strip()
+                return suggestion
+            
+            return self.default_substitutions.get(ingredient.lower(), 
                 f"No substitution found for {ingredient}. Try an online search for alternatives.")
         except Exception as e:
             print(f"Error generating substitution: {str(e)}")
             return self.default_substitutions.get(ingredient.lower(), 
                 f"No substitution found for {ingredient}. Try an online search for alternatives.")
+
+class RecipeVectorStore:
+    def __init__(self, recipes: List[Dict], model_manager: ModelManager):
+        self.recipes = recipes
+        self.model_manager = model_manager
+        self.dimension = 2560  # Phi-2's hidden size
+        self.index = None
+        self.fallback_search = SimpleRecipeSearch(recipes)
+        self._initialize_index()
+
+    def _initialize_index(self):
+        if not self.model_manager.is_available():
+            print("Model not available, using fallback search...")
+            return
+
+        try:
+            print("Building recipe search index...")
+            self.index = faiss.IndexFlatL2(self.dimension)
+            self._build_index()
+            print("Recipe search index built successfully!")
+        except Exception as e:
+            print(f"Error initializing index: {str(e)}")
+            self.index = None
+
+    def _build_index(self):
+        if not self.model_manager.is_available() or not self.index:
+            return
+
+        embeddings = []
+        for recipe in tqdm(self.recipes, desc="Building recipe embeddings"):
+            # Create a searchable text representation of the recipe
+            recipe_text = f"{recipe['name']} - {recipe.get('cuisine', '')}. "
+            recipe_text += f"Ingredients: {', '.join(recipe['ingredients'])}. "
+            recipe_text += f"Instructions: {' '.join(recipe['instructions'])}"
+            
+            embedding = self.model_manager.get_embedding(recipe_text)
+            if embedding is not None:
+                embeddings.append(embedding)
+
+        if embeddings:
+            embeddings_array = np.array(embeddings)
+            self.index.add(embeddings_array)
+
+    def search(self, query: str, k: int = 3) -> List[Dict]:
+        """Search for recipes using embeddings if available, otherwise fall back to text search."""
+        if not self.model_manager.is_available() or self.index is None:
+            print("Using fallback text search...")
+            return self.fallback_search.search(query, k)
+
+        try:
+            # Get query embedding
+            query_embedding = self.model_manager.get_embedding(query)
+            if query_embedding is None:
+                return self.fallback_search.search(query, k)
+
+            # Search using FAISS
+            distances, indices = self.index.search(np.array([query_embedding]), k)
+            
+            # Format and return results
+            results = []
+            for idx in indices[0]:
+                if idx < len(self.recipes):
+                    recipe = self.recipes[idx]
+                    # Ensure recipe format is consistent
+                    formatted_recipe = {
+                        'name': recipe['name'],
+                        'cuisine': recipe.get('cuisine', ''),
+                        'prep_time': recipe.get('prep_time', ''),
+                        'cook_time': recipe.get('cook_time', ''),
+                        'servings': recipe.get('servings', 0),
+                        'ingredients': recipe['ingredients'],
+                        'instructions': recipe['instructions']
+                    }
+                    results.append(formatted_recipe)
+            
+            return results
+        except Exception as e:
+            print(f"Error in vector search: {str(e)}")
+            return self.fallback_search.search(query, k)
 
 class RecipeAssistant:
     def __init__(self, recipes):
@@ -191,19 +316,23 @@ class RecipeAssistant:
         print("\nRecipe Assistant is ready!")
 
     def process_query(self, query: str) -> str:
+        """Process a user query and return appropriate response."""
         try:
-            if "substitute" in query.lower() or "substitution" in query.lower():
-                # Extract ingredient from query
-                words = query.lower().split()
+            # Check if it's a substitution query
+            if any(word in query.lower() for word in ['substitute', 'substitution', 'instead of', 'replacement']):
                 try:
-                    idx = words.index("substitute") if "substitute" in words else words.index("substitution")
-                    ingredient = " ".join(words[idx+1:]).strip("?.,! for")
+                    # Extract the ingredient from the query
+                    ingredient = query.lower()
+                    for term in ['substitute for', 'substitution for', 'instead of', 'replacement for']:
+                        if term in ingredient:
+                            ingredient = ingredient.split(term)[-1].strip()
+                            break
                     return self.substitution.suggest_substitution(ingredient)
                 except ValueError:
                     return "Please specify an ingredient for substitution."
             else:
-                # Assume it's a recipe search
-                results = self.vector_store.search(query)
+                # It's a recipe search
+                results = self.vector_store.fallback_search.search(query)
                 if not results:
                     return "No matching recipes found. Try different ingredients or a broader search."
                 
@@ -214,7 +343,8 @@ class RecipeAssistant:
                     response += f"   Instructions: {recipe['instructions']}\n\n"
                 return response
         except Exception as e:
-            return f"An error occurred: {str(e)}\nPlease try again with a different query."
+            print(f"Query processing error: {str(e)}")
+            return []
 
 # Initialize the recipe assistant
 recipe_assistant = None

@@ -2,24 +2,300 @@
     "recipes": [
         {
             "name": "Classic Spaghetti Carbonara",
-            "ingredients": ["spaghetti", "eggs", "pecorino romano", "guanciale", "black pepper"],
-            "instructions": "1. Cook pasta al dente. 2. Crisp guanciale. 3. Mix eggs and cheese. 4. Combine with hot pasta.",
             "cuisine": "Italian",
-            "prep_time": "20 minutes"
+            "prep_time": "15 minutes",
+            "cook_time": "20 minutes",
+            "servings": 4,
+            "ingredients": [
+                "400g spaghetti",
+                "200g guanciale or pancetta",
+                "4 large eggs",
+                "100g pecorino romano",
+                "100g parmigiano reggiano",
+                "2 cloves garlic",
+                "black pepper",
+                "salt"
+            ],
+            "instructions": [
+                "Bring a large pot of salted water to boil",
+                "Cut guanciale into small cubes",
+                "In a bowl, whisk eggs, grated pecorino, and parmigiano",
+                "Cook pasta until al dente",
+                "While pasta cooks, fry guanciale until crispy",
+                "Reserve 1 cup pasta water, drain pasta",
+                "Combine hot pasta with guanciale and fat",
+                "Off heat, quickly stir in egg mixture",
+                "Add pasta water as needed for creamy sauce",
+                "Season with black pepper and serve immediately"
+            ]
         },
         {
-            "name": "Simple Chicken Stir-Fry",
-            "ingredients": ["chicken breast", "soy sauce", "vegetables", "garlic", "ginger", "vegetable oil"],
-            "instructions": "1. Cut chicken into pieces. 2. Stir-fry vegetables. 3. Add chicken and sauce. 4. Cook until done.",
-            "cuisine": "Asian",
-            "prep_time": "25 minutes"
+            "name": "Chicken Teriyaki",
+            "cuisine": "Japanese",
+            "prep_time": "15 minutes",
+            "cook_time": "20 minutes",
+            "servings": 4,
+            "ingredients": [
+                "4 chicken breasts",
+                "1/2 cup soy sauce",
+                "1/4 cup mirin",
+                "1/4 cup sake",
+                "3 tablespoons brown sugar",
+                "2 cloves garlic",
+                "1 inch ginger",
+                "2 cups steamed rice",
+                "green onions"
+            ],
+            "instructions": [
+                "Slice chicken into bite-sized pieces",
+                "Mix soy sauce, mirin, sake, and brown sugar",
+                "Mince garlic and ginger, add to sauce",
+                "Heat oil in a large pan over medium-high heat",
+                "Cook chicken until golden brown",
+                "Pour in sauce and simmer until thickened",
+                "Serve over steamed rice",
+                "Garnish with chopped green onions"
+            ]
         },
         {
-            "name": "Classic Chocolate Chip Cookies",
-            "ingredients": ["flour", "butter", "brown sugar", "white sugar", "eggs", "vanilla extract", "chocolate chips"],
-            "instructions": "1. Cream butter and sugars. 2. Add eggs and vanilla. 3. Mix in dry ingredients. 4. Bake.",
-            "cuisine": "American",
-            "prep_time": "30 minutes"
+            "name": "Vegetarian Buddha Bowl",
+            "cuisine": "Fusion",
+            "prep_time": "20 minutes",
+            "cook_time": "30 minutes",
+            "servings": 2,
+            "ingredients": [
+                "1 cup quinoa",
+                "1 sweet potato",
+                "1 can chickpeas",
+                "2 cups kale",
+                "1 avocado",
+                "2 tablespoons olive oil",
+                "1 lemon",
+                "tahini sauce",
+                "sesame seeds"
+            ],
+            "instructions": [
+                "Cook quinoa according to package instructions",
+                "Cube and roast sweet potato with olive oil",
+                "Drain and roast chickpeas with spices",
+                "Massage kale with olive oil and lemon juice",
+                "Slice avocado",
+                "Assemble bowls with quinoa base",
+                "Top with roasted vegetables and kale",
+                "Drizzle with tahini sauce",
+                "Sprinkle with sesame seeds"
+            ]
+        },
+        {
+            "name": "Classic French Onion Soup",
+            "cuisine": "French",
+            "prep_time": "15 minutes",
+            "cook_time": "1 hour",
+            "servings": 6,
+            "ingredients": [
+                "6 large onions",
+                "4 tablespoons butter",
+                "2 tablespoons olive oil",
+                "1 teaspoon sugar",
+                "2 cloves garlic",
+                "8 cups beef broth",
+                "1/2 cup red wine",
+                "1 bay leaf",
+                "4 sprigs fresh thyme",
+                "baguette slices",
+                "gruyere cheese"
+            ],
+            "instructions": [
+                "Slice onions thinly",
+                "Cook onions in butter and oil until caramelized (45 minutes)",
+                "Add sugar to help caramelization",
+                "Add minced garlic and cook briefly",
+                "Pour in wine and scrape up brown bits",
+                "Add broth, bay leaf, and thyme",
+                "Simmer for 30 minutes",
+                "Toast baguette slices",
+                "Top soup with bread and cheese",
+                "Broil until cheese is bubbly"
+            ]
+        },
+        {
+            "name": "Thai Green Curry",
+            "cuisine": "Thai",
+            "prep_time": "20 minutes",
+            "cook_time": "25 minutes",
+            "servings": 4,
+            "ingredients": [
+                "2 cans coconut milk",
+                "4 tablespoons green curry paste",
+                "2 chicken breasts",
+                "1 eggplant",
+                "1 red bell pepper",
+                "1 cup bamboo shoots",
+                "4 kaffir lime leaves",
+                "2 tablespoons fish sauce",
+                "1 tablespoon palm sugar",
+                "Thai basil",
+                "jasmine rice"
+            ],
+            "instructions": [
+                "Slice chicken into thin pieces",
+                "Cut eggplant and pepper into chunks",
+                "Simmer coconut milk until oil separates",
+                "Fry curry paste in the coconut oil",
+                "Add chicken and cook through",
+                "Add vegetables and remaining coconut milk",
+                "Season with fish sauce and palm sugar",
+                "Simmer until vegetables are tender",
+                "Stir in Thai basil",
+                "Serve with jasmine rice"
+            ]
+        },
+        {
+            "name": "Homemade Pizza Margherita",
+            "cuisine": "Italian",
+            "prep_time": "2 hours",
+            "cook_time": "15 minutes",
+            "servings": 4,
+            "ingredients": [
+                "4 cups bread flour",
+                "1.5 cups warm water",
+                "2 teaspoons active dry yeast",
+                "2 teaspoons salt",
+                "2 tablespoons olive oil",
+                "1 can San Marzano tomatoes",
+                "fresh mozzarella",
+                "fresh basil",
+                "extra virgin olive oil"
+            ],
+            "instructions": [
+                "Mix flour, yeast, salt, and warm water",
+                "Knead dough until smooth",
+                "Let rise for 1-2 hours",
+                "Divide dough into 4 balls",
+                "Stretch each ball into a thin circle",
+                "Top with crushed tomatoes",
+                "Add torn mozzarella",
+                "Bake at highest oven temperature on pizza stone",
+                "Garnish with fresh basil and olive oil"
+            ]
+        },
+        {
+            "name": "Beef and Broccoli Stir-Fry",
+            "cuisine": "Chinese",
+            "prep_time": "20 minutes",
+            "cook_time": "15 minutes",
+            "servings": 4,
+            "ingredients": [
+                "1 pound flank steak",
+                "2 cups broccoli florets",
+                "3 cloves garlic",
+                "1 inch ginger",
+                "1/2 cup soy sauce",
+                "2 tablespoons oyster sauce",
+                "1 tablespoon cornstarch",
+                "sesame oil",
+                "steamed rice"
+            ],
+            "instructions": [
+                "Slice beef against the grain",
+                "Mix soy sauce, oyster sauce, and cornstarch",
+                "Marinate beef for 15 minutes",
+                "Blanch broccoli until bright green",
+                "Heat wok until smoking",
+                "Stir-fry beef until browned",
+                "Add garlic and ginger",
+                "Return broccoli to wok",
+                "Add sauce and simmer until thickened",
+                "Drizzle with sesame oil"
+            ]
+        },
+        {
+            "name": "Mediterranean Quinoa Salad",
+            "cuisine": "Mediterranean",
+            "prep_time": "15 minutes",
+            "cook_time": "20 minutes",
+            "servings": 6,
+            "ingredients": [
+                "2 cups quinoa",
+                "1 cucumber",
+                "2 cups cherry tomatoes",
+                "1 red onion",
+                "1 cup kalamata olives",
+                "200g feta cheese",
+                "fresh parsley",
+                "fresh mint",
+                "olive oil",
+                "lemon juice"
+            ],
+            "instructions": [
+                "Cook quinoa and let cool",
+                "Dice cucumber and tomatoes",
+                "Finely slice red onion",
+                "Chop herbs",
+                "Combine all ingredients in a bowl",
+                "Crumble feta cheese over top",
+                "Dress with olive oil and lemon juice",
+                "Season with salt and pepper",
+                "Toss well and serve"
+            ]
+        },
+        {
+            "name": "Chocolate Lava Cakes",
+            "cuisine": "French",
+            "prep_time": "15 minutes",
+            "cook_time": "12 minutes",
+            "servings": 4,
+            "ingredients": [
+                "200g dark chocolate",
+                "200g butter",
+                "4 eggs",
+                "4 egg yolks",
+                "200g sugar",
+                "2 tablespoons flour",
+                "vanilla ice cream",
+                "fresh berries"
+            ],
+            "instructions": [
+                "Preheat oven to 200°C (400°F)",
+                "Melt chocolate and butter together",
+                "Whisk eggs, yolks, and sugar until light",
+                "Fold chocolate mixture into eggs",
+                "Sift in flour and fold gently",
+                "Divide between buttered ramekins",
+                "Bake for 10-12 minutes",
+                "Serve immediately with ice cream",
+                "Garnish with fresh berries"
+            ]
+        },
+        {
+            "name": "Mushroom Risotto",
+            "cuisine": "Italian",
+            "prep_time": "10 minutes",
+            "cook_time": "30 minutes",
+            "servings": 4,
+            "ingredients": [
+                "1.5 cups arborio rice",
+                "500g mixed mushrooms",
+                "1 onion",
+                "3 cloves garlic",
+                "1/2 cup white wine",
+                "6 cups vegetable stock",
+                "1/2 cup parmesan",
+                "2 tablespoons butter",
+                "fresh thyme",
+                "olive oil"
+            ],
+            "instructions": [
+                "Heat stock in a separate pot",
+                "Sauté mushrooms until golden",
+                "Cook onion and garlic until soft",
+                "Add rice and toast lightly",
+                "Add wine and simmer until absorbed",
+                "Add hot stock one ladle at a time",
+                "Stir continuously until rice is creamy",
+                "Fold in mushrooms and parmesan",
+                "Finish with butter and thyme"
+            ]
         }
     ]
 }
